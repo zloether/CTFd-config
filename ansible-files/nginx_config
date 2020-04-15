@@ -1,0 +1,9 @@
+server {
+    listen {{ http_port }};
+    server_name localhost 0.0.0.0;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:{{ app_dir }}/app.sock;
+    }
+}
