@@ -1,2 +1,6 @@
 [scoreboard]
-10.0.0.xxx
+10.0.0.xxx ansible_user=username
+
+
+[scoreboard:vars]
+ansible_python_interpreter=/usr/bin/python3
