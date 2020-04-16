@@ -4,6 +4,6 @@ server {
 
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:{{ app_dir }}/app.sock;
+        uwsgi_pass unix:{{ code_dir }}/app.sock;
     }
 }

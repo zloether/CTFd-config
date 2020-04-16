@@ -6,7 +6,8 @@
   vars:
     http_port: 80
     app_name: "ctfd"
-    app_dir: "/opt/{{ app_name }}/CTFd-master/CTFd-master"
+    app_dir: "/opt/{{ app_name }}"
+    code_dir: "{{ app_dir }}/CTFd-master"
     time_zone: "America/New_York"
     web_user: "www-data"
     log_dir: "/var/log/{{ app_name }}"
@@ -70,22 +71,22 @@
   - name: copy wsgi config ini
     template:
       src: ansible-files/app.ini
-      dest: "{{ app_dir }}"
+      dest: "{{ code_dir }}"
       owner: "{{ app_name }}"
       group: "{{ web_user }}"
       mode: 0774
   - name: install python requirements
     pip:
-      virtualenv: "{{ app_dir }}/env"
+      virtualenv: "{{ code_dir }}/env"
       virtualenv_command: /usr/bin/python3 -m venv
       name:
         - wheel
         - uwsgi
   - name: install CTFd python requirements
     pip:
-      virtualenv: "{{ app_dir }}/env"
+      virtualenv: "{{ code_dir }}/env"
       virtualenv_command: /usr/bin/python3 -m venv
-      requirements: "{{ app_dir }}/requirements.txt"
+      requirements: "{{ code_dir }}/requirements.txt"
     notify:
       - restart app
   - name: update app directory permissions

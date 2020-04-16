@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User={{ app_name }}
 Group=www-data
-WorkingDirectory={{ app_dir }}
-Environment="PATH={{ app_dir }}/env/bin"
-ExecStart={{ app_dir }}/env/bin/uwsgi --ini app.ini
+WorkingDirectory={{ code_dir }}
+Environment="PATH={{ code_dir }}/env/bin"
+ExecStart={{ code_dir }}/env/bin/uwsgi --ini app.ini
 
 [Install]
 WantedBy=multi-user.target
