@@ -8,12 +8,12 @@ Configures CTFd to run with Nginx front-end using Ansible
 
 ## Pre-requisites
  - Ansible must be installed on your control host (probably your computer).
-    Ubuntu:
+    Ubuntu or Mint:
     ```
     sudo apt install -y ansible
     ```
  - SSH server must be installed and running on the remote host (the computer you want to configure).
-    Ubuntu:
+    Ubuntu or Mint:
     ```
     sudo apt install -y openssh-server
     ```
@@ -24,5 +24,26 @@ Configures CTFd to run with Nginx front-end using Ansible
  - Update the `inventory` file with your remote host address
  - Run this command:
     ```
-    ansible-playbook -i inventory --ask-pass --ask-become-pass ansible-playbook.yml
+    ansible-playbook -i inventory --ask-pass --ask-become-pass ansible-playbook_<OS>.yml
     ```
+
+## Manage CTFd daemon
+Check status
+```
+systemctl status ctfd
+```
+
+Restart daemon
+```
+sudo systemctl restart ctfd
+```
+
+Stop daemon
+```
+sudo systemctl stop ctfd
+```
+
+Start daemon
+```
+sudo systemctl start ctfd
+```
