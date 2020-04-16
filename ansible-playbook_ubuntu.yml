@@ -1,0 +1,150 @@
+#!/usr/bin/env ansible-playbook -i inventory --ask-pass --ask-become-pass --check ansible-playbook.yml
+
+---
+- hosts: scoreboard
+  become: yes
+  vars:
+    http_port: 80
+    app_name: "ctfd"
+    app_dir: "/opt/{{ app_name }}/CTFd-master"
+    time_zone: "America/New_York"
+    web_user: "www-data"
+    log_dir: "/var/log/{{ app_name }}"
+  tasks:
+  - name: set hostname
+    hostname:
+      name: "{{ app_name }}"
+  - name: set timezone
+    timezone:
+      name: "{{ time_zone }}"
+  - name: install updates
+    apt:
+      autoremove: yes
+      update_cache: yes
+      upgrade: safe
+  - name: install packages
+    apt:
+      package:
+        - python3-pip
+        - python3-dev
+        - build-essential
+        - libssl-dev
+        - libffi-dev
+        - python3-setuptools
+        - python3-venv
+        - nginx
+        - unzip
+  - name: create application user
+    user:
+      create_home: no
+      home: "{{ app_dir }}"
+      name: "{{ app_name }}"
+      shell: /bin/bash
+      state: present
+      system: yes
+  - name: create application directory
+    file:
+      name: "{{ app_dir }}"
+      state: directory
+      owner: "{{ app_name }}"
+      group: "{{ web_user }}"
+      mode: 0755
+  - name: create logging directory
+    file:
+      dest: "{{ log_dir }}"
+      mode: 0755
+      owner: "{{ app_name }}"
+      group: "{{ web_user }}"
+      state: directory
+  - name: copy app directory
+    unarchive:
+      src: https://github.com/CTFd/CTFd/archive/master.zip
+      dest: "{{ app_dir }}"
+      remote_src: yes
+      mode: 0755
+      owner: "{{ app_name }}"
+      group: "{{ web_user }}"
+      keep_newer: yes
+    notify:
+      - restart app
+  - name: copy wsgi config ini
+    template:
+      src: ansible-files/app.ini
+      dest: "{{ app_dir }}"
+      owner: "{{ app_name }}"
+      group: "{{ web_user }}"
+      mode: 0774
+  - name: install python requirements
+    pip:
+      virtualenv: "{{ app_dir }}/env"
+      virtualenv_command: /usr/bin/python3 -m venv
+      name:
+        - wheel
+        - uwsgi
+  - name: install CTFd python requirements
+    pip:
+      virtualenv: "{{ app_dir }}/env"
+      virtualenv_command: /usr/bin/python3 -m venv
+      requirements: "{{ app_dir }}/requirements.txt"
+    notify:
+      - restart app
+  - name: update app directory permissions
+    file:
+      dest: "{{ app_dir }}"
+      owner: "{{ app_name }}"
+      group: "{{ web_user }}"
+      recurse: yes
+  - name: create app systemd script
+    template:
+      src: ansible-files/systemd_script
+      dest: "/etc/systemd/system/{{ app_name }}.service"
+      owner: root
+      group: root
+      mode: 0755
+    notify:
+      - reload systemd
+      - restart app
+  - name: start app
+    service:
+      name: "{{ app_name }}"
+      state: started
+      enabled: yes
+  - name: copy nginx config
+    template:
+      src: ansible-files/nginx_config
+      dest: "/etc/nginx/sites-available/{{ app_name}}"
+      owner: root
+      group: root
+      mode: 0644
+    notify:
+      - restart nginx
+  - name: enable nginx app site
+    file:
+      src: "/etc/nginx/sites-available/{{ app_name }}"
+      dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+      state: link
+    notify:
+      - restart nginx
+  - name: disable nginx default site
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+    notify:
+      - restart nginx
+  - name: start nginx
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+  handlers:
+  - name: reload systemd
+    become: true
+    command: systemctl daemon-reload
+  - name: restart app
+    service:
+      name: "{{ app_name }}"
+      state: restarted
+  - name: restart nginx
+    service:
+      name: nginx
+      state: restarted
