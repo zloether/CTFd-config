@@ -11,6 +11,7 @@
     time_zone: "America/New_York"
     web_user: "www-data"
     log_dir: "/var/log/{{ app_name }}"
+    socket_loc: "/tmp/{{ app_name }}.sock"
   tasks:
   - name: set hostname
     hostname:
@@ -68,6 +69,22 @@
       keep_newer: yes
     notify:
       - restart app
+  - name: update config.py
+    replace:
+      path: "{{ code_dir }}/CTFd/config.py"
+      after: "SQLALCHEMY_DATABASE_URI = "
+      regexp: '^DATABASE_URL$'
+      replace: '"""mysql+pymysql://{{ mysql_app_user }}:{{ mysql_app_password }}@localhost/{{ mysql_app_database }}"""'
+    notify:
+      - restart app
+  - name: update config.py
+    replace:
+      path: "{{ code_dir }}/CTFd/config.py"
+      after: "SQLALCHEMY_DATABASE_URI = "
+      regexp: '^mysql+pymysql://{{ mysql_app_user }}:{{ mysql_app_password }}@localhost/{{ mysql_app_database }}$'
+      replace: 'mysql+pymysql://{{ mysql_app_user }}:{{ mysql_app_password }}@localhost/{{ mysql_app_database }}'
+    notify:
+      - restart app
   - name: copy wsgi config ini
     template:
       src: ansible-files/app.ini
@@ -75,6 +92,8 @@
       owner: "{{ app_name }}"
       group: "{{ web_user }}"
       mode: 0774
+    notify:
+      - restart app
   - name: install python requirements
     pip:
       virtualenv: "{{ code_dir }}/env"
@@ -135,7 +154,7 @@
   - name: start nginx
     service:
       name: nginx
-      state: started
+      state: stopped
       enabled: yes
   handlers:
   - name: reload systemd
@@ -148,4 +167,4 @@
   - name: restart nginx
     service:
       name: nginx
-      state: restarted
+      state: stopped
