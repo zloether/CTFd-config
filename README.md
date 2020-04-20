@@ -3,10 +3,11 @@ Configures CTFd to run with Nginx front-end using Ansible
 
 
 ## Configuration Decisions
- - Uses SQLite, not a real database like MySQL/MariaDB
+ - Uses MySQL backend
 
 
 ## Pre-requisites
+ - MySQL server must be available. See this project for help: [https://github.com/zloether/MySQL-config](https://github.com/zloether/MySQL-config)
  - Ansible must be installed on your control host (probably your computer).
     Ubuntu or Mint:
     ```
